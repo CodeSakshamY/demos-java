@@ -1,67 +1,75 @@
-package org.javademos.java25.jep519;
+package org.javademos.java25.jep508;
 
 import org.javademos.commons.IDemo;
+import jdk.incubator.vector.FloatVector;
+import jdk.incubator.vector.VectorSpecies;
 
- import org.openjdk.jol.info.ClassLayout;
+/// Demo for JDK 25 feature **Vector API (10th Incubator)** (JEP 508)
+///
+/// ### JEP History
+/// - JDK 16: [JEP 338 - Vector API (Incubator)](https://openjdk.org/jeps/338)  
+/// - JDK 17: [JEP 414 - Vector API (Second Incubator)](https://openjdk.org/jeps/414)  
+/// - JDK 18: [JEP 417 - Vector API (Third Incubator)](https://openjdk.org/jeps/417)  
+/// - JDK 19: [JEP 426 - Vector API (Fourth Incubator)](https://openjdk.org/jeps/426)  
+/// - JDK 20: [JEP 438 - Vector API (Fifth Incubator)](https://openjdk.org/jeps/438)  
+/// - JDK 21: [JEP 448 - Vector API (Sixth Incubator)](https://openjdk.org/jeps/448)  
+/// - JDK 22: [JEP 460 - Vector API (Seventh Incubator)](https://openjdk.org/jeps/460)  
+/// - JDK 23: [JEP 465 - Vector API (Eighth Incubator)](https://openjdk.org/jeps/465)  
+/// - JDK 24: [JEP 474 - Vector API (Ninth Incubator)](https://openjdk.org/jeps/474)  
+/// - JDK 25: [JEP 508 - Vector API (Tenth Incubator)](https://openjdk.org/jeps/508)  
+///
+/// ### Further reading
+/// - [Inside Java - Vector API](https://inside.java/tag/vectorapi/)
+///
+/// @see jdk.incubator.vector.FloatVector
+/// @see jdk.incubator.vector.VectorSpecies
+public class VectorApiDemo implements IDemo {
 
-/// Demo for JDK 25 feature **Compact Object Headers** (JEP 519)
-///
-/// JEP history:
-/// - JDK 25: [JEP 519 - Compact Object Headers](https://openjdk.org/jeps/519)
-///
-/// Further reading:
-/// - [Inside Java - JEP Café: Compact Object Headers](https://inside.java/2024/06/18/jepcafe-compactobjectheaders/)
-///
-/// @see java.lang.Object
-public class CompactObjectHeaderDemo implements IDemo {
-
-    private static final int SAMPLE_COUNT = 5_000_000;
+    // VectorSpecies defines the shape of SIMD vectors (e.g., length and type)
+    private static final VectorSpecies<Float> SPECIES = FloatVector.SPECIES_PREFERRED;
 
     @Override
     public void demo() {
-        info(519);
+        info(508);
 
-        System.out.println("=== Minimal Example Objects ===\n");
+        System.out.println("=== Vector API Demo ===");
 
-        Object obj1 = new Object();
-        Object obj2 = new Object();
+        float[] a = new float[SPECIES.length()];
+        float[] b = new float[SPECIES.length()];
+        float[] c = new float[SPECIES.length()];
 
-        System.out.println("Created two Objects:");
-        System.out.println("obj1 hash: " + obj1.hashCode());
-        System.out.println("obj2 hash: " + obj2.hashCode());
-
-        System.out.println("\nExplanation:");
-        System.out.println("- In JDK 24 and older, object headers are usually 128 bits (16 bytes).");
-        System.out.println("- In JDK 25 with JEP 519, most objects use compact 64-bit headers (8 bytes).");
-        System.out.println("- This reduces memory overhead, especially when many objects exist.");
-
-        // -------------------------------------------------
-        // Part 1: Measure memory usage in pure Java
-        System.out.println("\n=== Approximate Memory Usage Demo ===");
-        Runtime runtime = Runtime.getRuntime();
-
-        long before = runtime.totalMemory() - runtime.freeMemory();
-
-        Object[] objs = new Object[SAMPLE_COUNT];
-        for (int i = 0; i < SAMPLE_COUNT; i++) {
-            objs[i] = new Object();
+        // Initialize arrays
+        for (int i = 0; i < SPECIES.length(); i++) {
+            a[i] = i + 1;
+            b[i] = (i + 1) * 10;
         }
 
-        long after = runtime.totalMemory() - runtime.freeMemory();
-        System.out.printf("Created %,d objects, approx memory used: %.2f MB%n",
-                SAMPLE_COUNT, (after - before) / (1024.0 * 1024.0));
+        // Load arrays into SIMD vectors
+        var va = FloatVector.fromArray(SPECIES, a, 0);
+        var vb = FloatVector.fromArray(SPECIES, b, 0);
 
-        System.out.println("- Compare running this on JDK 21 vs JDK 25 to see memory savings.");
+        // Vectorized addition
+        var vc = va.add(vb);
 
-        // -------------------------------------------------
-        // Part 2: Optional JOL object header inspectio
-        
-        System.out.println("\n=== Object Header Layout (JOL) ===");
-        System.out.println("Object 1 layout:\n" + ClassLayout.parseInstance(obj1).toPrintable());
-        System.out.println("Object 2 layout:\n" + ClassLayout.parseInstance(obj2).toPrintable());
-        System.out.println("- Observe header size reduction in JDK 25 vs older versions.");
-        
+        // Store result back into array
+        vc.intoArray(c, 0);
 
-        System.out.println("\nTip: Use tools like jol-cli or jmap for more precise memory/layout measurements.");
+        // Print results
+        System.out.println("Vector length: " + SPECIES.length());
+        System.out.print("a: "); printArray(a);
+        System.out.print("b: "); printArray(b);
+        System.out.print("c = a + b: "); printArray(c);
+
+        System.out.println("\nExplanation:");
+        System.out.println("- The Vector API performs SIMD operations on arrays.");
+        System.out.println("- JEP 508 is the 10th incubator of this API in JDK 25.");
+        System.out.println("- Compare performance with normal loops to see gains.");
+    }
+
+    private static void printArray(float[] arr) {
+        for (float v : arr) {
+            System.out.print(v + " ");
+        }
+        System.out.println();
     }
 }
